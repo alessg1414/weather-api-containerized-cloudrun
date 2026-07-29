@@ -74,7 +74,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "DataVision API",
         Version = "v1",
-        Description = "API REST para Sistema de An�lisis y Reportes con datos meteorol�gicos"
+        Description = "API REST para Sistema de An�lisis y Reportes con datos meteorol�gicos"
     });
 
     // Configure JWT in Swagger
@@ -109,7 +109,13 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Swagger se controla con una bandera explícita (EnableSwagger) en vez de
+// IsDevelopment(), para poder mostrarlo también en Cloud Run (que corre en
+// Production) sin tener que fingir un entorno de desarrollo.
+var enableSwagger = app.Environment.IsDevelopment()
+    || builder.Configuration.GetValue<bool>("EnableSwagger");
+
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -119,7 +125,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// NOTA: se elimina UseHttpsRedirection().
+// Cloud Run termina TLS en su propio balanceador y reenvía tráfico plano por
+// HTTP al contenedor. Si Kestrel intenta redirigir a HTTPS internamente,
+// puede generar loops de redirección. La HTTPS "de verdad" para el usuario
+// final ya la garantiza Cloud Run en el borde.
 
 app.UseCors("AllowAll");
 
