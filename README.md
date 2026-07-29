@@ -1,207 +1,183 @@
-# Weather API — Containerized & Cloud Run-ready
+# Weather API — Containerized Enterprise Service
 
-A containerized ASP.NET Core 8 REST API for real-time weather data analysis and reporting. This project provides JWT-based authentication, role-based authorization, weather data retrieval from OpenWeatherMap, API usage auditing, and is configured to be built into a container image and deployed to Google Cloud Run.
+> **Cloud-Ready ASP.NET Core 8 Web API for Real-Time Meteorological Analysis & Reporting**
 
-## Key changes in this repository
+> [!NOTE]  
+> **Academic & Project Status**: This repository contains a production-ready, containerized RESTful Web API. Please note that while multi-stage Docker containerization and local orchestration are fully implemented, automated deployment pipelines to **Google Cloud Run** and integration with **Google Cloud SQL** are currently pending implementation as a future deployment milestone.
 
-- Multi-stage Dockerfile included (SDK build stage + lightweight ASP.NET runtime stage).
-- Container image build and deployment instructions for Google Cloud Run.
-- Guidance for managing secrets and database connectivity for cloud deployments.
+---
 
-## 📦 Installation (Local development)
+## Executive Summary
 
-### Prerequisites
+This repository presents the architecture, containerization strategy, and operational documentation for a scalable **ASP.NET Core 8 RESTful API** designed for meteorological data retrieval, audit logging, and analytical reporting. The application integrates directly with external meteorological services (**OpenWeatherMap**) and enforces zero-trust security via **JSON Web Token (JWT)** authentication and **Role-Based Access Control (RBAC)**.
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (for local development)
-- Docker (to build and run images locally)
-- (Optional) SQL Server for local development (LocalDB or full instance)
-- An [OpenWeatherMap API key](https://openweathermap.org/api)
+Engineered with a microservice architecture in mind, the service is built using a multi-stage `Dockerfile` to optimize execution footprints and ensure cross-platform runtime parity. The application is fully prepared for containerized local development and future deployment to serverless container execution environments such as **Google Cloud Run**.
 
-### Setup
+---
 
-```bash
-git clone https://github.com/alessg1414/weather-api-containerized-cloudrun.git
-cd weather-api-containerized-cloudrun
+## Technical Features & Core Capabilities
+
+* **Identity & Access Management (IAM)**: Enforces stateless JWT bearer token authentication paired with role-based authorization policies (`Admin` vs. `User`).
+* **Meteorological Integration**: Asynchronous integration with the OpenWeatherMap API for real-time atmospheric data processing (temperature, humidity, atmospheric pressure).
+* **Audit & Compliance**: Centralized middleware tracking for API usage metrics, rate usage, and request/response audit logging.
+* **Data Persistence Layer**: Built on Entity Framework Core 9 using the Code-First approach for schema migrations and relational database interactions.
+* **Interactive API Documentation**: OpenAPI 3.0 specification auto-generated via Swashbuckle, providing interactive testing endpoints via Swagger UI.
+
+---
+
+## Technology Stack
+
+| Component | Specification / Framework |
+| :--- | :--- |
+| **Framework** | ASP.NET Core 8.0 (.NET 8 SDK) |
+| **Database ORM** | Entity Framework Core 9.0 |
+| **Relational Database** | Microsoft SQL Server / Azure SQL / LocalDB |
+| **Security & Auth** | JWT (`System.IdentityModel.Tokens.Jwt`) / Role-Based Policy |
+| **External API** | OpenWeatherMap REST API |
+| **Containerization** | Docker Engine (Multi-stage build runtime) |
+| **API Documentation** | Swashbuckle (OpenAPI / Swagger UI) |
+
+---
+
+## Architecture & Containerization Strategy
+
+The application leverages a multi-stage `Dockerfile` designed according to enterprise container optimization guidelines. Build operations occur in an isolated SDK environment, while runtime artifacts are copied to a hardened, minimal ASP.NET Core runtime image.
+
+
 ```
 
-Configure `appsettings.json` (or use environment variables — recommended for container/cloud):
++-------------------------------------------------------------------+
+|                        Container Build Process                    |
+|                                                                   |
+|   +-----------------------+           +-----------------------+   |
+|   | Stage 1: Build & Test |           | Stage 2: Runtime      |   |
+|   | - [mcr.microsoft.com/](https://www.google.com/search?q=https%3A%2F%2Fmcr.microsoft.com%2F)  |           | - [mcr.microsoft.com/](https://www.google.com/search?q=https%3A%2F%2Fmcr.microsoft.com%2F)  |   |
+|   |   dotnet/sdk:8.0      |== Copy ==>|   dotnet/aspnet:8.0   |   |
+|   | - EF Core Migrations  |  Binaries | - Light, hardened OS  |   |
+|   | - Source Compilation  |           | - Port 80/8080 Target |   |
+|   +-----------------------+           +-----------------------+   |
++-------------------------------------------------------------------+
 
+```
+
+### Key Architectural Standards
+1. **Separation of Concerns**: Business logic, atmospheric data processing, and persistence layers are segregated across clean service layers.
+2. **Environment-Driven Configuration**: Application configurations fall back to system environment variables, making the container completely agnostic to host platforms.
+3. **Stateless Operations**: Session data and authentication tokens are validated statelessly, ensuring horizontal scalability across container replicas.
+
+---
+
+## Local Development & Installation Guide
+
+### Prerequisites
+* **.NET 8.0 SDK** (for native binary execution)
+* **Docker Engine / Docker Desktop** (for container execution)
+* **Microsoft SQL Server** (LocalDB, standalone instance, or containerized instance)
+* **OpenWeatherMap API Key** (v2.5 REST endpoint access)
+
+### Setup & Configuration
+
+1. Clone the repository:
+   ```bash
+   git clone [https://github.com/alessg1414/weather-api-containerized-cloudrun.git](https://github.com/alessg1414/weather-api-containerized-cloudrun.git)
+   cd weather-api-containerized-cloudrun
+
+```
+
+2. Configure environment settings in `appsettings.json` or export environment variables:
 ```json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=WeatherApiDb;Trusted_Connection=true;MultipleActiveResultSets=true"
   },
   "JwtSettings": {
-    "SecretKey": "your-secret-key-at-least-32-characters-long",
+    "SecretKey": "YOUR_CRYPTOGRAPHICALLY_SECURE_SECRET_KEY_MIN_32_BYTES",
     "Issuer": "WeatherApi",
     "Audience": "WeatherClients",
     "ExpiryInHours": "24"
   },
   "OpenWeatherMap": {
-    "ApiKey": "your-openweathermap-api-key",
-    "BaseUrl": "https://api.openweathermap.org/data/2.5/"
+    "ApiKey": "YOUR_OPENWEATHERMAP_API_KEY",
+    "BaseUrl": "[https://api.openweathermap.org/data/2.5/](https://api.openweathermap.org/data/2.5/)"
   }
 }
+
 ```
 
-Apply EF migrations and run locally:
 
+3. Execute database migrations and initialize the service:
 ```bash
 dotnet ef database update
 dotnet run
+
 ```
 
-The API will be available at `https://localhost:5001` (or at the port configured). The Swagger UI is available at `/` when running locally.
 
-## 🐳 Build and run with Docker (local)
-
-Build the container image locally (the project contains a multi-stage Dockerfile optimized for small runtime image):
-
-```bash
-docker build -t weather-api:local .
-```
-
-Run the container and map port 8080 (Cloud Run uses port 8080 by convention — container listens on port 80 by default in ASP.NET images):
-
-```bash
-docker run -p 8080:80 \
-  -e "ConnectionStrings__DefaultConnection=Server=...;Database=...;User Id=...;Password=...;" \
-  -e "JwtSettings__SecretKey=your-secret-key" \
-  -e "OpenWeatherMap__ApiKey=your-openweathermap-key" \
-  weather-api:local
-```
-
-Then open http://localhost:8080 for Swagger and API endpoints.
-
-## 🚀 Deploy to Google Cloud Run
-
-This section shows a simple flow to build, push, and deploy the container image to Cloud Run using Google Cloud Build and the gcloud CLI.
-
-### Prerequisites (GCP)
-
-- A Google Cloud project (PROJECT_ID)
-- gcloud CLI installed and authenticated (gcloud auth login)
-- Enable required APIs:
-  - Cloud Run API (run.googleapis.com)
-  - Cloud Build API (cloudbuild.googleapis.com)
-  - Artifact Registry or Container Registry (artifactregistry.googleapis.com / containerregistry.googleapis.com)
-  - (Optional) Cloud SQL Admin API (cloudsqladmin.googleapis.com) if using Cloud SQL for SQL Server
-
-### Build and push image
-
-You can use Cloud Build to build and push the image to Artifact Registry or Container Registry. Example using Container Registry:
-
-```bash
-gcloud config set project PROJECT_ID
-gcloud builds submit --tag gcr.io/PROJECT_ID/weather-api:latest .
-```
-
-Or build locally and push to Artifact Registry / Container Registry if you prefer:
-
-```bash
-docker build -t gcr.io/PROJECT_ID/weather-api:latest .
-docker push gcr.io/PROJECT_ID/weather-api:latest
-```
-
-### Secrets and environment configuration
-
-For production deployments you should avoid baking secrets into the image or storing them in source control. Recommended options:
-
-- Use Secret Manager and reference secrets from Cloud Run.
-- Set environment variables at deployment time (not checked into code).
-
-Example (recommended) — create secrets in Secret Manager and grant the Cloud Run runtime service account access, then add secrets when deploying.
-
-### Deploy to Cloud Run (basic)
-
-```bash
-gcloud run deploy weather-api \
-  --image gcr.io/PROJECT_ID/weather-api:latest \
-  --platform managed \
-  --region REGION \
-  --allow-unauthenticated \
-  --set-env-vars "JwtSettings__SecretKey=YOUR_SECRET,OpenWeatherMap__ApiKey=YOUR_KEY"
-```
-
-Note: For production, prefer using Secret Manager and Cloud Run's `--add-secrets` (or use the console) to inject secrets instead of `--set-env-vars`.
-
-### Connecting to a managed database (Cloud SQL for SQL Server)
-
-If you use Cloud SQL for SQL Server, you can connect a Cloud Run service to it using:
-
-1. Create a Cloud SQL instance (SQL Server) and note the instance connection name.
-2. Grant the Cloud Run service account the `Cloud SQL Client` role.
-3. Deploy Cloud Run adding the Cloud SQL instance:
-
-```bash
-gcloud run deploy weather-api \
-  --image gcr.io/PROJECT_ID/weather-api:latest \
-  --region REGION \
-  --platform managed \
-  --add-cloudsql-instances INSTANCE_CONNECTION_NAME \
-  --set-env-vars "ConnectionStrings__DefaultConnection=Server=tcp:YOUR_CLOUDSQL_PRIVATE_IP,1433;Database=DB;User Id=USER;Password=PASS;"
-```
-
-Alternatively, use the Cloud SQL Auth proxy approach or private IP depending on networking preference. Ensure the connection string used by your app matches the SQL Server connection format.
-
-## 🔐 Recommended environment variables / secrets
-
-- ConnectionStrings__DefaultConnection
-- JwtSettings__SecretKey
-- JwtSettings__Issuer (optional)
-- JwtSettings__Audience (optional)
-- OpenWeatherMap__ApiKey
-
-Store sensitive values in Secret Manager and inject them into Cloud Run at deploy time.
-
-## 🛠 Usage (same as local)
-
-The database is seeded with two default users for convenience (if you keep seed data in production be mindful of credentials):
-
-| Username | Password | Role  |
-|----------|----------|-------|
-| admin    | admin123 | Admin |
-| user     | user123  | User  |
-
-1. Open the service URL provided by Cloud Run in the browser
-2. Use `POST /api/auth/login` to get a JWT token
-3. Click **Authorize** in Swagger and enter `Bearer {token}`
-4. Query weather data, generate reports, or manage users
-
-## ✨ Features
-
-- JWT authentication and role-based access control (Admin / User)
-- Real-time weather data via OpenWeatherMap
-- Report generation (temperature, humidity, pressure)
-- API usage auditing and statistics
-- Swagger UI (interactive documentation)
-
-## 🧰 Tech Stack
-
-- ASP.NET Core 8 (.NET 8)
-- SQL Server (LocalDB or managed SQL Server in the cloud)
-- Entity Framework Core 9
-- JWT authentication (System.IdentityModel.Tokens.Jwt)
-- OpenWeatherMap external API
-- Swashbuckle (Swagger / OpenAPI)
-
-## 📡 API Endpoints (summary)
-
-See the API for full details; Swagger documents all endpoints once running.
-
-## 📄 License
-
-MIT
-
-## 🙌 Credits
-
-- [OpenWeatherMap](https://openweathermap.org/) for weather data
-- [Swashbuckle](https://github.com/domaindrivendev/Swashbuckle.AspNetCore) for Swagger integration
-- [Entity Framework Core](https://github.com/dotnet/efcore) for data access
+*The API will bind to `https://localhost:5001`. Interactive Swagger documentation will be available at root `/`.*
 
 ---
 
-If you'd like, I can also:
-- Add a short Cloud Build config (cloudbuild.yaml) to automate image builds and pushes.
-- Create a sample `gcloud` deploy script that uses Secret Manager and Cloud SQL properly.
-- Update the Dockerfile or add instructions specific to Artifact Registry instead of Container Registry.
+## Local Container Deployment (Docker)
+
+To validate container behavior prior to cloud deployment, build and execute the runtime image locally:
+
+1. **Build the container image**:
+```bash
+docker build -t weather-api:v1.0.0 .
+
+```
+
+
+2. **Execute the containerized service**:
+```bash
+docker run -d \
+  -p 8080:80 \
+  -e "ConnectionStrings__DefaultConnection=Server=YOUR_HOST;Database=WeatherApiDb;User Id=sa;Password=YOUR_PASSWORD;" \
+  -e "JwtSettings__SecretKey=YOUR_CRYPTOGRAPHICALLY_SECURE_SECRET_KEY" \
+  -e "OpenWeatherMap__ApiKey=YOUR_OPENWEATHERMAP_API_KEY" \
+  --name weather-api-instance \
+  weather-api:v1.0.0
+
+```
+
+
+3. Access `http://localhost:8080` to verify container startup and endpoint availability.
+
+---
+
+## Default Development Accounts
+
+During local initialization, seed data provisions two default service accounts for authentication validation:
+
+| Username | Password | Role | Permissions Scope |
+| --- | --- | --- | --- |
+| `admin` | `admin123` | **Admin** | Full system administration, audit log access, user management |
+| `user` | `user123` | **User** | Read-only weather querying and analytical report generation |
+
+> **Security Warning**: Standard default credentials must be removed or overridden prior to staging in non-development environments.
+
+---
+
+## Project Roadmap & Pending Milestone
+
+* [x] **Phase 1**: ASP.NET Core 8 Web API Implementation & JWT Security Architecture
+* [x] **Phase 2**: Relational Schema Migration & OpenWeatherMap Data Aggregation
+* [x] **Phase 3**: Multi-Stage Dockerfile Optimization & Local Container Validation
+* [ ] **Phase 4 (Pending)**: Integration with **Google Cloud Secret Manager** and **Cloud SQL (SQL Server)**
+* [ ] **Phase 5 (Pending)**: Automated Build & Deployment Pipeline via **Google Cloud Build** to **Google Cloud Run**
+
+---
+
+## License & Attribution
+
+* **License**: Open-source under the terms of the [MIT License](https://www.google.com/search?q=LICENSE).
+* **External Services**:
+* [OpenWeatherMap API](https://openweathermap.org/) — Meteorological Data Provider
+* [Swashbuckle.AspNetCore](https://github.com/domaindrivendev/Swashbuckle.AspNetCore) — OpenAPI Specification Tools
+* [Entity Framework Core](https://github.com/dotnet/efcore) — Object-Relational Mapping
+
+
+
+```
+
+```
