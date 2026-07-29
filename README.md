@@ -3,7 +3,7 @@
 > **Cloud-Ready ASP.NET Core 8 Web API for Real-Time Meteorological Analysis & Reporting**
 
 > [!NOTE]  
-> **Academic & Project Status**: This repository contains a production-ready, containerized RESTful Web API. Please note that while multi-stage Docker containerization and local orchestration are fully implemented, automated deployment pipelines to **Google Cloud Run** and integration with **Google Cloud SQL** are currently pending implementation as a future deployment milestone.
+> **Project Status**: This repository contains a production-ready, containerized RESTful Web API. Please note that while multi-stage Docker containerization and local orchestration are fully implemented, automated deployment pipelines to **Google Cloud Run** and integration with **Google Cloud SQL** are currently pending implementation as a future deployment milestone.
 
 ---
 
