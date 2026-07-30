@@ -11,9 +11,9 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: datavision-api
-  ECS_CLUSTER: datavision-cluster
-  ECS_SERVICE: datavision-api-service
+  ECR_REPOSITORY: weather-api
+  ECS_CLUSTER: weather-api-cluster
+  ECS_SERVICE: weather-api-service
   CONTAINER_NAME: api               # debe matchear el "name" del contenedor en task-definition.json
   TASK_DEFINITION_FILE: .aws/task-definition.json
 
