@@ -27,7 +27,10 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] ?? "your-256-bit-secret-key-here-must-be-at-least-32-characters-long");
+var secretKey = jwtSettings["SecretKey"] 
+    ?? throw new InvalidOperationException("JwtSettings:SecretKey no está configurada.");
+
+var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(x =>
 {
@@ -57,16 +60,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        builder =>
+        policy =>
         {
-            builder
+            policy
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader();
         });
 });
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -74,20 +76,21 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "DataVision API",
         Version = "v1",
-        Description = "API REST para Sistema de An�lisis y Reportes con datos meteorol�gicos"
+        Description = "API REST para Sistema de Análisis y Reportes con datos meteorológicos"
     });
 
-    // Configure JWT in Swagger
+    // Configure JWT in Swagger UI
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Description = "Autenticación JWT usando el esquema Bearer. Ejemplo: 'Bearer {token}'",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -96,22 +99,16 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                },
-                Scheme = "oauth2",
-                Name = "Bearer",
-                In = ParameterLocation.Header,
+                }
             },
-            new List<string>()
+            Array.Empty<string>()
         }
     });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-// Swagger se controla con una bandera explícita (EnableSwagger) en vez de
-// IsDevelopment(), para poder mostrarlo también en Cloud Run (que corre en
-// Production) sin tener que fingir un entorno de desarrollo.
+// Configure Swagger
 var enableSwagger = app.Environment.IsDevelopment()
     || builder.Configuration.GetValue<bool>("EnableSwagger");
 
@@ -121,15 +118,9 @@ if (enableSwagger)
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "DataVision API v1");
-        c.RoutePrefix = string.Empty; // Swagger UI at root
+        c.RoutePrefix = string.Empty;
     });
 }
-
-// NOTA: se elimina UseHttpsRedirection().
-// Cloud Run termina TLS en su propio balanceador y reenvía tráfico plano por
-// HTTP al contenedor. Si Kestrel intenta redirigir a HTTPS internamente,
-// puede generar loops de redirección. La HTTPS "de verdad" para el usuario
-// final ya la garantiza Cloud Run en el borde.
 
 app.UseCors("AllowAll");
 
@@ -138,7 +129,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Ensure database is created
+// Ensure database readiness
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

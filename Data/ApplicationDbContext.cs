@@ -51,26 +51,29 @@ namespace DataVisionAPI.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Datos iniciales (opcional)
+            // Datos iniciales
             SeedData(modelBuilder);
         }
 
         private void SeedData(ModelBuilder modelBuilder)
         {
-            // Usuario administrador por defecto - Contraseñas hasheadas con BCrypt
+            // Generar hashes dinámicos garantizados con la misma librería BCrypt del proyecto
+            string adminHash = BCrypt.Net.BCrypt.HashPassword("admin123", BCrypt.Net.BCrypt.GenerateSalt(12));
+            string userHash = BCrypt.Net.BCrypt.HashPassword("user123", BCrypt.Net.BCrypt.GenerateSalt(12));
+
             modelBuilder.Entity<Usuario>().HasData(
                 new Usuario
                 {
                     Id = 1,
                     Usuario_ = "admin",
-                    Password = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewpYYGiF1XQvCgOy", // admin123 hasheada
+                    Password = adminHash,
                     Rol = "Admin"
                 },
                 new Usuario
                 {
                     Id = 2,
                     Usuario_ = "user",
-                    Password = "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewpYYGiF1XQvCgOy", // user123 hasheada
+                    Password = userHash,
                     Rol = "User"
                 }
             );
