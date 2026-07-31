@@ -6,10 +6,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       EnableSwagger: "true"
-      ConnectionStrings__DefaultConnection: >-
-        Server=db,1433;Database=DataVisionDB;User Id=sa;
-        Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=true;
-        MultipleActiveResultSets=true
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=DataVisionDB;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=true;MultipleActiveResultSets=true"
       JwtSettings__SecretKey: ${JWT_SECRET}
       JwtSettings__Issuer: DataVisionAPI
       JwtSettings__Audience: DataVisionClients
