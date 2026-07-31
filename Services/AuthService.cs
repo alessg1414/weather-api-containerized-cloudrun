@@ -69,24 +69,28 @@ namespace DataVisionAPI.Services
         public string GenerateJwtToken(string usuario, string rol, int userId)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"] ?? "your-256-bit-secret-key-here-must-be-at-least-32-characters-long");
+            var secretKey = jwtSettings["SecretKey"] 
+                ?? throw new InvalidOperationException("JwtSettings:SecretKey no está configurada.");
+
+            // CAMBIO CLAVE: Usar UTF8 para ser 100% consistente con Program.cs
+            var key = Encoding.UTF8.GetBytes(secretKey);
 
             var claims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Name, usuario),
                 new Claim(ClaimTypes.Role, rol),
                 new Claim("UserId", userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, usuario),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat,
-                    new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(),
-                    ClaimValueTypes.Integer64)
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            var expiryInHours = double.TryParse(jwtSettings["ExpiryInHours"], out var hours) ? hours : 24;
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(double.Parse(jwtSettings["ExpiryInHours"] ?? "24")),
+                Expires = DateTime.UtcNow.AddHours(expiryInHours),
                 Issuer = jwtSettings["Issuer"],
                 Audience = jwtSettings["Audience"],
                 SigningCredentials = new SigningCredentials(
