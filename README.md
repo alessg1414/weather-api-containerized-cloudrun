@@ -20,8 +20,8 @@ Engineered with a microservice architecture in mind, the service is built using 
 To keep this portfolio demo fully self-contained and highly cost-effective under AWS Free Tier limitations, the SQL Server instance runs as a sidecar container directly inside the ECS Fargate task. 
 
 While this works seamlessly for a single-replica demo, in a true enterprise production environment, this is an anti-pattern due to the ephemeral and horizontally-scaling nature of serverless tasks. A production-ready evolution of this stack would:
-* 1. Move the database tier completely out of the container to **Amazon RDS for SQL Server**.
-* 2. Update **AWS Secrets Manager** to inject the external RDS connection strings dynamically at runtime.
+1. Move the database tier completely out of the container to **Amazon RDS for SQL Server**.
+2. Update **AWS Secrets Manager** to inject the external RDS connection strings dynamically at runtime.
 
 
 ---
