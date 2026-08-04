@@ -15,7 +15,7 @@ Engineered with a microservice architecture in mind, the service is built using 
 
 ---
 
-##Production Evolution & Cost Trade-offs
+## Production Evolution & Cost Trade-offs
 
 To keep this portfolio demo fully self-contained and highly cost-effective under AWS Free Tier limitations, the SQL Server instance runs as a sidecar container directly inside the ECS Fargate task. 
 
